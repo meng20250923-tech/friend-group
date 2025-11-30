@@ -18,7 +18,7 @@ class Group:
 
     def size(self):
         """Return how many people are in the group."""
-        pass
+        return len(self.members)
 
     def contains(self, name):
         """Check whether the group contains a person with the given name.
@@ -28,40 +28,84 @@ class Group:
 
     def add_person(self, name, age, job):
         """Add a new person with the given characteristics to the group."""
-        self.members.append(Person(name, age, job))
+        if self.contains(name):
+            raise ValueError(f"Person with name '{name}' already exists in the group")
+        person = Person(name, age, job)
+        self.members.append(person)
+        self.connections[name] = {}
 
     def number_of_connections(self, name):
         """Find the number of connections that a person in the group has"""
-        pass
+        if not self.contains(name):
+            raise ValueError(f"Person with name '{name}' not found in the group")
+        return len(self.connections.get(name, {}))
 
     def connect(self, name1, name2, relation, reciprocal=True):
         """Connect two given people in a particular way.
-        Optional reciprocal: If true, will add the relationship from name2 to name 1 as well
+        Optional reciprocal: If true, will add the relationship from name2 to name1 as well
         """
-        pass
+        if not self.contains(name1):
+            raise ValueError(f"Person with name '{name1}' not found in the group")
+        if not self.contains(name2):
+            raise ValueError(f"Person with name '{name2}' not found in the group")
+        
+        # Add connection from name1 to name2
+        if name1 not in self.connections:
+            self.connections[name1] = {}
+        self.connections[name1][name2] = relation
+        
+        # If reciprocal, add connection from name2 to name1
+        if reciprocal:
+            if name2 not in self.connections:
+                self.connections[name2] = {}
+            self.connections[name2][name1] = relation
 
     def forget(self, name1, name2):
         """Remove the connection between two people."""
-        pass
+        if not self.contains(name1):
+            raise ValueError(f"Person with name '{name1}' not found in the group")
+        if not self.contains(name2):
+            raise ValueError(f"Person with name '{name2}' not found in the group")
+        
+        # Remove connection from name1 to name2 if it exists
+        if name1 in self.connections and name2 in self.connections[name1]:
+            del self.connections[name1][name2]
+        
+        # Remove connection from name2 to name1 if it exists
+        if name2 in self.connections and name1 in self.connections[name2]:
+            del self.connections[name2][name1]
 
     def average_age(self):
         """Compute the average age of the group's members."""
+        if self.size() == 0:
+            return 0
         all_ages = [person.age for person in self.members]
         return sum(all_ages) / self.size()
 
 
 if __name__ == "__main__":
-    # Start with an empty group...
+    # Start with an empty group
     my_group = Group()
-    # ...then add the group members one by one...
+    
+    # Add the group members one by one
     my_group.add_person("Jill", 26, "biologist")
-    # ...then their connections
+    my_group.add_person("Zalika", 28, "artist")
+    my_group.add_person("John", 27, "writer")
+    my_group.add_person("Nash", 33, "chef")
+    
+    # Add their connections
     my_group.connect("Jill", "Zalika", "friend")
-    # ... then forget Nash and John's connection
+    my_group.connect("Jill", "John", "partner", reciprocal=True)
+    my_group.connect("Zalika", "Nash", "cousin", reciprocal=True)
+    my_group.connect("Nash", "John", "friend", reciprocal=True)
+    
+    # Forget Nash and John's connection
     my_group.forget("Nash", "John")
 
+    # Run assertions
     assert my_group.contains("John"), "John should be in the group"
     assert my_group.size() == 4, "Group should have 4 members"
     assert my_group.average_age() == 28.75, "Average age of the group is incorrect!"
     assert my_group.number_of_connections("Nash") == 1, "Nash should only have one relation"
+    
     print("All assertions have passed!")
